@@ -720,10 +720,19 @@ h1 span{color:var(--gold)}
           <p>Completa el formulario para preparar una solicitud de información sobre tu proyecto.</p>
         </div>
 
-        <form class="contact-form reveal" id="demo-form">
+        <form class="contact-form reveal" id="contact-form" action="https://formspree.io/f/xeaoonyp" method="POST">
+          <input type="hidden" name="_subject" value="Nueva solicitud desde la web de RADMARTE">
           <label>
             Nombre o empresa
             <input type="text" name="nombre" autocomplete="organization" required placeholder="Escribe tu nombre o empresa">
+          </label>
+          <label>
+            Correo electrónico
+            <input type="email" name="email" autocomplete="email" required placeholder="nombre@correo.com">
+          </label>
+          <label>
+            Teléfono
+            <input type="tel" name="telefono" autocomplete="tel" inputmode="tel" placeholder="Ej. +51 999 999 999">
           </label>
           <label>
             Tipo de proyecto
@@ -740,8 +749,8 @@ h1 span{color:var(--gold)}
             Cuéntanos brevemente qué necesitas
             <textarea name="mensaje" rows="5" required placeholder="Describe el alcance general del proyecto"></textarea>
           </label>
-          <button class="btn btn-primary full" type="submit">Enviar solicitud</button>
-          <p class="form-note full" id="form-note" aria-live="polite">Formulario demostrativo. La versión publicada puede conectarse a un correo o servicio de formularios.</p>
+          <button class="btn btn-primary full" id="submit-request" type="submit">Enviar solicitud</button>
+          <p class="form-note full" id="form-note" aria-live="polite">Los datos enviados se utilizarán únicamente para atender tu solicitud.</p>
         </form>
       </div>
     </section>
@@ -795,13 +804,39 @@ if ('IntersectionObserver' in window) {
   revealEls.forEach(el => el.classList.add('is-visible'));
 }
 
-const form = document.getElementById('demo-form');
+const form = document.getElementById('contact-form');
 const note = document.getElementById('form-note');
-if (form && note) {
-  form.addEventListener('submit', (e) => {
+const submitButton = document.getElementById('submit-request');
+if (form && note && submitButton) {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    note.textContent = 'Solicitud preparada. En la versión publicada podemos conectar este formulario a un correo o servicio de formularios.';
-    note.style.color = '#1f252b';
+    if (!form.reportValidity()) return;
+
+    const originalText = submitButton.textContent;
+    submitButton.disabled = true;
+    submitButton.textContent = 'Enviando...';
+    note.textContent = 'Estamos enviando tu solicitud.';
+    note.style.color = '#737b80';
+
+    try {
+      const response = await fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: { 'Accept': 'application/json' }
+      });
+
+      if (!response.ok) throw new Error('Formspree no pudo procesar la solicitud.');
+
+      form.reset();
+      note.textContent = 'Solicitud enviada correctamente. Nuestro equipo revisará la información proporcionada.';
+      note.style.color = '#1b6e3f';
+    } catch (error) {
+      note.textContent = 'No pudimos enviar la solicitud en este momento. Inténtalo nuevamente en unos minutos.';
+      note.style.color = '#a12a2a';
+    } finally {
+      submitButton.disabled = false;
+      submitButton.textContent = originalText;
+    }
   });
 }
 
